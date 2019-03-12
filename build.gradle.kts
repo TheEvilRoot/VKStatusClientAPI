@@ -2,10 +2,29 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "1.3.21"
+    `maven-publish`
 }
 
-group = "VKStatusClient "
+group = "VKStatusClientAPI"
 version = "1.0"
+
+val sourcesJar by tasks.creating(Jar::class) {
+    classifier = "sources"
+    from(sourceSets.getByName("main").allSource)
+}
+artifacts.add("archives", sourcesJar)
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            groupId = "com.theevilroot.vkstatus"
+            artifactId = "client-api"
+            version = "1.0"
+            from(components["java"])
+            artifact(sourcesJar)
+        }
+    }
+}
 
 repositories {
     mavenCentral()

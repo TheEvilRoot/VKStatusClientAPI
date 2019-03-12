@@ -13,7 +13,7 @@ data class Event (
     @SerializedName("last_name")
     val lastName: String,
     @SerializedName("time")
-    private val time: Double,
+    val time: Double,
     @SerializedName("old")
     private val old: Int,
     @SerializedName("new")
