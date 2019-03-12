@@ -3,9 +3,11 @@ package com.theevilroot.vkstatusclient
 import com.google.gson.Gson
 import com.google.gson.JsonElement
 import com.google.gson.JsonParser
+import io.reactivex.Observable
 import io.reactivex.subjects.PublishSubject
 import io.socket.client.IO
 import io.socket.client.Socket
+import io.socket.client.Socket.*
 
 private const val socketPort = 5101
 private const val serverPort = 5100
@@ -22,28 +24,35 @@ class VKStatusClient (
     /**
      * Event bus for socket events (Socket.EVENT_CONNECTING etc.)
      */
-    val systemBus: PublishSubject<String> = PublishSubject.create()
+    private val systemBus: PublishSubject<String> = PublishSubject.create()
 
     /**
      * Event bus for events coming from socket
      */
-    val eventBus: PublishSubject<Event> = PublishSubject.create()
+    private val eventBus: PublishSubject<Event> = PublishSubject.create()
 
+    /**
+     * [!] Warning
+     *  Asyncronious operation
+     *  Listen system bus for CONNECTED event
+     */
     fun connect() {
         clientSocket = IO.socket("http://$host:$socketPort")
 
-        clientSocket.on(Socket.EVENT_CONNECTING) { systemBus.onNext(Socket.EVENT_CONNECTING) }
-        clientSocket.on(Socket.EVENT_CONNECT) { systemBus.onNext(Socket.EVENT_CONNECT) }
-        clientSocket.on(Socket.EVENT_CONNECT_ERROR) { systemBus.onNext(Socket.EVENT_CONNECT_ERROR) }
-        clientSocket.on(Socket.EVENT_CONNECT_TIMEOUT) { systemBus.onNext(Socket.EVENT_CONNECT_TIMEOUT) }
-        clientSocket.on(Socket.EVENT_DISCONNECT) { systemBus.onNext(Socket.EVENT_DISCONNECT) }
-        clientSocket.on(Socket.EVENT_ERROR) { systemBus.onNext(Socket.EVENT_ERROR) }
-        clientSocket.on(Socket.EVENT_PING) { systemBus.onNext(Socket.EVENT_PING) }
-        clientSocket.on(Socket.EVENT_PONG) { systemBus.onNext(Socket.EVENT_PONG) }
-        clientSocket.on(Socket.EVENT_RECONNECT) { systemBus.onNext(Socket.EVENT_RECONNECT) }
-        clientSocket.on(Socket.EVENT_RECONNECTING) { systemBus.onNext(Socket.EVENT_RECONNECTING) }
-        clientSocket.on(Socket.EVENT_RECONNECT_ERROR) { systemBus.onNext(Socket.EVENT_RECONNECT_ERROR) }
-        clientSocket.on(Socket.EVENT_RECONNECT_FAILED) { systemBus.onNext(Socket.EVENT_RECONNECT_FAILED) }
+        clientSocket.on(arrayOf(
+            EVENT_CONNECTING,
+            EVENT_CONNECT,
+            EVENT_CONNECT_ERROR,
+            EVENT_CONNECT_TIMEOUT,
+            EVENT_DISCONNECT,
+            EVENT_ERROR,
+            EVENT_PING,
+            EVENT_PONG,
+            EVENT_RECONNECT,
+            EVENT_RECONNECTING,
+            EVENT_RECONNECT_ERROR,
+            EVENT_RECONNECT_FAILED
+        )) { event, _ -> systemBus.onNext(event) }
 
         clientSocket.on(EVENT_EVENT) { array ->
             array
@@ -58,16 +67,43 @@ class VKStatusClient (
         clientSocket.connect()
     }
 
+    /**
+     * [!] Warning
+     *  Asyncronious operation!
+     *  After call listen system bus for DISCONNECT event
+     */
+    fun disconnect() {
+        if (!isConnected()) {
+            return
+        }
+
+        clientSocket.disconnect()
+    }
+
+    fun isConnected(): Boolean {
+        return this::clientSocket.isInitialized && clientSocket.connected()
+    }
+
+    fun systemBus(): Observable<String> {
+        return systemBus
+    }
+
+    fun eventBus(): Observable<Event> {
+        return eventBus
+    }
+
+    private fun Socket.on(events: Array<String>, listener: (String, Array<Any>) -> Unit) {
+        for (event in events) {
+            this.on(event) { listener(event, it) }
+        }
+    }
+
     private fun parseOrNull(any: Any): JsonElement? {
         return try {
             jsonParser.parse(any as String)
         } catch (e: Exception) {
             null
         }
-    }
-
-    fun isConnected(): Boolean {
-        return this::clientSocket.isInitialized && clientSocket.connected()
     }
 
 }
