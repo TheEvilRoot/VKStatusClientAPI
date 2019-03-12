@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "VKStatusClientAPI"
-version = "1.0"
+version = "1.4.2"
 
 val sourcesJar by tasks.creating(Jar::class) {
     classifier = "sources"
@@ -19,7 +19,7 @@ publishing {
         create<MavenPublication>("maven") {
             groupId = "com.theevilroot.vkstatus"
             artifactId = "client-api"
-            version = "1.0"
+            version = version
             from(components["java"])
             artifact(sourcesJar)
         }

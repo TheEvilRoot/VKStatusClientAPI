@@ -2,6 +2,7 @@ package com.theevilroot.vkstatusclient
 
 import com.google.gson.annotations.SerializedName
 import java.util.*
+import kotlin.math.roundToLong
 
 
 // Event: {"user_id":436146371,"first_name":"Максим","last_name":"Иосифов","time":1552286858974.975,"old":1,"new":0}
@@ -17,9 +18,16 @@ data class Event (
     @SerializedName("old")
     private val old: Int,
     @SerializedName("new")
-    private val new: Int
+    private val new: Int,
+    @SerializedName("photo")
+    val photo: String
 ) {
-    val oldStatus: Boolean = old == 1
-    val newStatus: Boolean = new == 1
-    val date: Date = Date(time.toLong())
+
+    val oldStatus: Boolean
+        get() { return old == 1 }
+    val newStatus: Boolean
+        get() { return new == 1 }
+    val date: Date
+        get() { return Date(time.roundToLong()) }
+
 }
