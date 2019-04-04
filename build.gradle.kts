@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "VKStatusClientAPI"
-version = "1.4.2"
+version = "2.0.3"
 
 val sourcesJar by tasks.creating(Jar::class) {
     classifier = "sources"
